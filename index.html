@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Rotina: Pais e Filhos</title>
+    <style>
+        :root {
+            --primary-boy: #4a90e2;
+            --primary-girl: #f06292;
+            --bg-color: #eef2f3;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            transition: border 0.5s ease;
+        }
+
+        .hidden { display: none; }
+
+        /* Estilo dos Perfis */
+        .profile-selection {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .profile-card {
+            cursor: pointer;
+            padding: 20px;
+            border: 3px solid #eee;
+            border-radius: 20px;
+            transition: 0.3s;
+            width: 40%;
+        }
+
+        .profile-card:hover { transform: scale(1.05); border-color: #ddd; }
+        .boy-card { color: var(--primary-boy); }
+        .girl-card { color: var(--primary-girl); }
+
+        /* Seleção de Idade */
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            font-size: 1rem;
+            margin: 15px 0;
+        }
+
+        /* Lista de Tarefas */
+        .task-list { text-align: left; margin-top: 25px; }
+        .task-item {
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border-left: 5px solid #ccc;
+        }
+        .task-item input { transform: scale(1.5); margin-right: 15px; cursor: pointer; }
+
+        /* Botões */
+        button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover { background: #45a049; }
+        .btn-reset { background: #95a5a6; margin-top: 20px; font-size: 0.8rem; }
+
+        .points-badge {
+            font-size: 2.5rem;
+            color: #f39c12;
+            font-weight: bold;
+            display: block;
+            margin: 10px 0;
+        }
+
+        .rewards-section {
+            background: #fff9e6;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
+            border: 1px dashed #f39c12;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-container">
+        
+        <div id="gender-screen">
+            <h2>Quem vai jogar?</h2>
+            <div class="profile-selection">
+                <div class="profile-card boy-card" onclick="selectGender('menino')">
+                    <div style="font-size: 60px;">👦</div>
+                    <p>Menino</p>
+                </div>
+                <div class="profile-card girl-card" onclick="selectGender('menina')">
+                    <div style="font-size: 60px;">👧</div>
+                    <p>Menina</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="age-screen" class="hidden">
+            <h2>Qual a sua idade?</h2>
+            <p>Isso ajuda a definir suas missões!</p>
+            <select id="age-select">
+                <option value="pequeno">3 a 6 anos (Pequeno Herói)</option>
+                <option value="medio">7 a 10 anos (Aventureiro)</option>
+                <option value="grande">11+ anos (Mestre da Rotina)</option>
+            </select>
+            <button onclick="confirmAge()">Começar Agora!</button>
+        </div>
+
+        <div id="app-screen" class="hidden">
+            <h2 id="welcome-msg">Olá!</h2>
+            <span>Seus pontos acumulados:</span>
+            <span id="points-display" class="points-badge">0</span>
+            
+            <div class="task-list" id="task-container">
+                </div>
+
+            <div class="rewards-section">
+                <h3>🎁 Trocar Pontos</h3>
+                <p id="reward-hint">Junte 100 pontos para um prêmio!</p>
+                <button onclick="redeemPoints()">Resgatar Recompensa (100 pts)</button>
+            </div>
+
+            <button class="btn-reset" onclick="resetApp()">Recomeçar / Trocar Perfil</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Dados e Estado
+        let totalPoints = parseInt(localStorage.getItem('pontosSalvos')) || 0;
+        let userGender = localStorage.getItem('generoSalvo');
+        let userAge = localStorage.getItem('idadeSalva');
+
+        const taskDatabase = {
+            pequeno: [
+                { text: "Escovar os dentes 🪥", points: 10 },
+                { text: "Guardar os brinquedos 🧸", points: 15 },
+                { text: "Comer toda a fruta 🍎", points: 10 }
+            ],
+            medio: [
+                { text: "Arrumar a própria cama 🛏️", points: 20 },
+                { text: "Dever de casa feito 📚", points: 30 },
+                { text: "Ajudar a por a mesa 🍽️", points: 15 }
+            ],
+            grande: [
+                { text: "Lavar a louça 🧼", points: 40 },
+                { text: "Organizar o guarda-roupa 👕", points: 35 },
+                { text: "Estudar matéria extra 🧠", points: 50 }
+            ]
+        };
+
+        // Ao carregar a página
+        window.onload = () => {
+            if (userGender && userAge) {
+                showDashboard();
+            }
+        };
+
+        // Fluxo de Configuração
+        function selectGender(gender) {
+            userGender = gender;
+            localStorage.setItem('generoSalvo', gender);
+            document.getElementById('gender-screen').classList.add('hidden');
+            document.getElementById('age-screen').classList.remove('hidden');
+        }
+
+        function confirmAge() {
+            userAge = document.getElementById('age-select').value;
+            localStorage.setItem('idadeSalva', userAge);
+            showDashboard();
+        }
+
+        // Dashboard Principal
+        function showDashboard() {
+            document.getElementById('gender-screen').classList.add('hidden');
+            document.getElementById('age-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            
+            const container = document.getElementById('main-container');
+            const welcome = document.getElementById('welcome-msg');
+            document.getElementById('points-display').innerText = totalPoints;
+
+            // Personalização Visual
+            if(userGender === 'menina') {
+                container.style.borderTop = "15px solid var(--primary-girl)";
+                welcome.innerText = "Olá, Princesa! 👑";
+            } else {
+                container.style.borderTop = "15px solid var(--primary-boy)";
+                welcome.innerText = "Olá, Campeão! 🏆";
+            }
+
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('task-container');
+            const myTasks = taskDatabase[userAge] || taskDatabase.pequeno;
+            
+            container.innerHTML = "<h3>Missões do Dia:</h3>";
+            myTasks.forEach((task, index) => {
+                container.innerHTML += `
+                    <div class="task-item" style="border-left-color: ${userGender === 'menina' ? '#f06292' : '#4a90e2'}">
+                        <input type="checkbox" id="task-${index}" onchange="updatePoints(${task.points}, this)">
+                        <label for="task-${index}"><strong>${task.text}</strong><br><small>Vale ${task.points} pontos</small></label>
+                    </div>
+                `;
+            });
+        }
+
+        // Lógica de Pontos
+        function updatePoints(pts, checkbox) {
+            if(checkbox.checked) {
+                totalPoints += pts;
+            } else {
+                totalPoints -= pts;
+            }
+            localStorage.setItem('pontosSalvos', totalPoints);
+            document.getElementById('points-display').innerText = totalPoints;
+        }
+
+        function redeemPoints() {
+            if(totalPoints >= 100) {
+                if(confirm("Parabéns! Você quer trocar 100 pontos por uma recompensa com seus pais?")) {
+                    totalPoints -= 100;
+                    localStorage.setItem('pontosSalvos', totalPoints);
+                    document.getElementById('points-display').innerText = totalPoints;
+                    alert("Oba! Vá até o papai ou mamãe e escolha seu prêmio! 🌟");
+                }
+            } else {
+                alert("Ainda faltam alguns pontos... Continue cumprindo suas missões! 💪");
+            }
+        }
+
+        function resetApp() {
+            if(confirm("Isso apagará seus pontos e voltará para o início. Tem certeza?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
